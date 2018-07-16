@@ -1,10 +1,11 @@
-import * as ws from 'ws';
-let WebSocketServer: typeof ws.Server = ws.Server;
+import WebSocket from 'ws';
 
-let wss: ws.Server = new WebSocketServer({ port: 10000 });
+const wss: WebSocket.Server = new WebSocket.Server({ port: 8080 });
+
 wss.on('connection', ws => {
-    ws.on('message', msg => {
-        console.log('recv: ' + msg);
-        ws.send('hello from server');
+    ws.on('message', message => {
+        console.log('received: %s', message);
     });
+
+    ws.send('something');
 });
