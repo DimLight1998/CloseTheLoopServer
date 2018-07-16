@@ -11,6 +11,7 @@
   "dependencies": {
     "ws": "5.2.2",
     "typescript": "2.9.2",
-    "@types/ws": "5.1.2"
+    "@types/ws": "5.1.2",
+    "ts-node": "7.0.0"
   }
 }
