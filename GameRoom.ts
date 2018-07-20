@@ -13,7 +13,7 @@ export class GameRoom {
         { x: 0, y: -1 }, // left
     ];
 
-    private static roundDuration: number = 200;// 200ms per round
+    static roundDuration: number = 200;// 200ms per round
 
     nRows: number;
     nCols: number;
@@ -21,15 +21,15 @@ export class GameRoom {
     trackMap: number[][];
     serverPlayerInfos: ServerPlayerInfo[];
     playerNum: number;// do not exceed 14
-    private timer: NodeJS.Timer;
-    private lastUpdateTime: number;
-    private serverAdapter: IServerAdapter = null;
-    private playersToClear: [number, boolean][] = [];
-    private potentialFillList: number[] = [];
-    private rebornList: number[] = [];
+    timer: NodeJS.Timer;
+    lastUpdateTime: number;
+    serverAdapter: IServerAdapter = null;
+    playersToClear: [number, boolean][] = [];
+    potentialFillList: number[] = [];
+    rebornList: number[] = [];
 
-    private mapStatus: number[][] = null;
-    private maxT: number;
+    mapStatus: number[][] = null;
+    maxT: number;
 
     constructor(nRows: number, nCols: number, playerNum: number) {
         this.nRows = nRows;
@@ -41,15 +41,15 @@ export class GameRoom {
         this.maxT = 0;
     }
 
-    private static create2DArray(nRows: number, nCols: number): number[][] {
+    static create2DArray(nRows: number, nCols: number): number[][] {
         return Array(nRows).fill(0).map(() => Array(nCols).fill(0));
     }
 
-    private static randInt(l: number, r: number): number {
+    static randInt(l: number, r: number): number {
         return l + Math.floor(Math.random() * (r - l + 1));
     }
 
-    private static rangeAll(rMin: number, rMax: number, cMin: number, cMax: number, callback: (r: number, c: number) => boolean): boolean {
+    static rangeAll(rMin: number, rMax: number, cMin: number, cMax: number, callback: (r: number, c: number) => boolean): boolean {
         for (let r: number = rMin; r <= rMax; r++) {
             for (let c: number = cMin; c <= cMax; c++) {
                 if (!callback(r, c)) {
@@ -60,8 +60,8 @@ export class GameRoom {
         return true;
     }
 
-    private static isAlive(info: PlayerInfo): boolean {
-        return info.state === 0;
+    static isAlive(info: PlayerInfo): boolean {
+        return info.state === 0 || info.state === 3;
     }
 
     public setServerAdapter(adapter: IServerAdapter): void {
@@ -105,7 +105,7 @@ export class GameRoom {
      * try to generate a 3x3 block for a player to spawn on, return the center of the block.
      * sometimes finding such area is hard (maybe impossible), return null in this case.
      */
-    private randomSpawnNewPlayer(playerID: number): MyPoint {
+    randomSpawnNewPlayer(playerID: number): MyPoint {
         const maxTryNum: number = 100;
         for (let i: number = 0; i < maxTryNum; i++) {
             const r: number = GameRoom.randInt(0, this.nRows - 1);
@@ -132,8 +132,9 @@ export class GameRoom {
     /**
      * fill the room with AI players, they will be replaced when new player enters in.
      */
-    private initAIPlayers(): void {
+    initAIPlayers(): void {
         this.serverPlayerInfos = [];
+        this.rebornList = [];
         for (let i: number = 0; i < this.playerNum; i++) {
             const info: ServerPlayerInfo = {
                 playerID: i + 1, // 0 reserverd for space
@@ -142,23 +143,16 @@ export class GameRoom {
                 headPos: null, // do it later
                 headDirection: 0, // up
                 nBlocks: 0, // do it later
-                state: 0, // 0 活着，1正在爆炸，2死了
+                state: 2, // 0 活着，1正在爆炸，2死了
                 nextDirection: 0, // same as headDirection
                 tracks: []
             };
-            // info.aiInstance.registerEvent(this.eventEmitter); todo
-            info.headPos = this.randomSpawnNewPlayer(info.playerID);
-            if (info.headPos !== null) {
-                info.nBlocks = 9;
-            } else {
-                info.nBlocks = 0;
-                info.state = 2;
-            }
             this.serverPlayerInfos.push(info);
+            this.rebornList.push(info.playerID);
         }
     }
 
-    private addToClearList(playerID: number, includeMap: boolean): void {
+    addToClearList(playerID: number, includeMap: boolean): void {
         for (let i: number = 0; i < this.playersToClear.length; i++) {
             if (this.playersToClear[i][0] === playerID) {
                 this.playersToClear[i][1] = this.playersToClear[i][1] || includeMap;
@@ -168,18 +162,12 @@ export class GameRoom {
         this.playersToClear.push([playerID, includeMap]);
     }
 
-    private updateAIPlayers(): void {
-        for (let player of this.serverPlayerInfos) {
-            if (player.isAI && player.aiInstance !== null) {
-                player.aiInstance.updateAI();
-            }
-        }
-    }
-
-    private updateDyingPlayers(): void {
+    updateDyingPlayers(): void {
         for (let player of this.serverPlayerInfos) {
             if (player.state === 1) {
                 player.state = 2;
+            } else if (player.state === 3) {
+                player.state = 0;
             }
         }
     }
@@ -187,7 +175,7 @@ export class GameRoom {
     /**
      * update all players' location, logically.
      */
-    private updatePlayerPos(): void {
+    updatePlayerPos(): void {
         for (let player of this.serverPlayerInfos) {
             if (GameRoom.isAlive(player)) { // alive
 
@@ -224,7 +212,7 @@ export class GameRoom {
         }
     }
 
-    private updateTrackCutting(): void {
+    updateTrackCutting(): void {
         for (let player of this.serverPlayerInfos) {
             if (GameRoom.isAlive(player) && !this.atBorder(player.headPos.x, player.headPos.y)) {
                 let currentTrackId: number = this.trackMap[player.headPos.x][player.headPos.y];
@@ -243,7 +231,7 @@ export class GameRoom {
         }
     }
 
-    private updatePlayerOverlapping(): void {
+    updatePlayerOverlapping(): void {
         for (let player of this.serverPlayerInfos) {
             if (GameRoom.isAlive(player)) {
                 let [curPlayerX, curPlayerY]: [number, number] = [player.headPos.x, player.headPos.y];
@@ -265,18 +253,7 @@ export class GameRoom {
         }
     }
 
-    private updateColorFilling(): void {
-        /**
-         * This function will consider color and track with id `walledId` as wall.
-         */
-
-        // since there are modification to the clearList, we should update potential list
-        let excludeList: number[] = this.playersToClear.map(p => p[0]);
-
-        this.potentialFillList = this.potentialFillList.filter(x => excludeList.indexOf(x) === -1);
-
-        // for elements still in the potential list, fill for them
-        for (let playerId of this.potentialFillList) {
+    async fillPlayer(playerId: number): Promise<void> {
             this.maxT++;
             // flood fill
             for (let r: number = 0; r < this.nRows; r++) {
@@ -351,22 +328,49 @@ export class GameRoom {
 
             this.serverPlayerInfos[playerId - 1].tracks = [];
         }
+
+    async updateColorFilling(): Promise<void> {
+        /**
+         * This function will consider color and track with id `walledId` as wall.
+         */
+
+        // since there are modification to the clearList, we should update potential list
+        let excludeList: number[] = this.playersToClear.map(p => p[0]);
+
+        this.potentialFillList = this.potentialFillList.filter(x => excludeList.indexOf(x) === -1);
+
+        // for elements still in the potential list, fill for them
+        for (let playerId of this.potentialFillList) {
+            await this.fillPlayer(playerId);
+        }
+    }
+
+    updatePlayerReborn(): void {
+        for (let playerID of this.rebornList) {
+            const info: ServerPlayerInfo = this.serverPlayerInfos[playerID - 1];
+            info.headPos = this.randomSpawnNewPlayer(playerID);
+            if (info.headPos !== null) {
+                info.state = 3;
+            }
+        }
+        this.rebornList = [];
     }
 
     /**
      * update all players' position logically. if it has a server adapter, dispatch the world to other clients.
      */
-    private updateRound(): void {
+    async updateRound(): Promise<void> {
         this.lastUpdateTime = Date.now();
         this.playersToClear = [];
         this.potentialFillList = [];
-        this.updateAIPlayers();
         this.updateDyingPlayers();
         this.updatePlayerPos();
+        this.updatePlayerReborn();
         this.updateTrackCutting();
         this.updatePlayerOverlapping();
-        this.updateColorFilling();
-        this.clearPlayers();
+        await this.updateColorFilling();
+        await this.clearPlayers();
+        this.updateDeadPlayer();
         if (this.serverAdapter !== null) {
             this.serverAdapter.dispatchNewWorld();
         }
@@ -376,7 +380,7 @@ export class GameRoom {
             console.log('Warning! next update should happen ' + -duration + 'ms ago!');
             duration = 0;
         } else {
-            console.log('actually compute costs ' + (currentTime - this.lastUpdateTime) + 'ms');// fixme
+            console.log('actually compute costs ' + (currentTime - this.lastUpdateTime) + 'ms');
         }
         this.timer = setTimeout(this.updateRound.bind(this), duration);
     }
@@ -385,7 +389,7 @@ export class GameRoom {
      * add a real player into serverPlayerInfos by replacing a random AI player,
      * return original ID of the player. If no such AI player found, return null.
      */
-    registerPlayer(): number {
+    replaceAIWithPlayer(): number {
         const validIndexes: number[] = [];
         for (let i: number = 0; i < this.serverPlayerInfos.length; i++) {
             if (this.serverPlayerInfos[i].isAI) {
@@ -401,6 +405,12 @@ export class GameRoom {
         obj.aiInstance = null;
         // todo respawn obj
         return obj.playerID;
+    }
+
+    replacePlayerWithAI(playerID: number): void {
+        const obj: ServerPlayerInfo = this.serverPlayerInfos[playerID - 1];
+        obj.isAI = true;
+        obj.aiInstance = new GameAI(this, playerID);
     }
 
     /**
@@ -482,7 +492,7 @@ export class GameRoom {
     /**
      * Clear player's track map and/or color map.
      */
-    private clearPlayers(): void {
+    async clearPlayers(): Promise<void> {
         for (let i: number = 0; i < this.nRows; i++) {
             for (let j: number = 0; j < this.nCols; j++) {
                 for (let p of this.playersToClear) {
@@ -501,6 +511,14 @@ export class GameRoom {
             player.tracks = [];
             if (p[1]) {// @refactor
                 player.state = 1;
+            }
+        }
+    }
+
+    updateDeadPlayer(): void {
+        for (let info of this.serverPlayerInfos) {
+            if (info.state === 2) {
+                this.rebornList.push(info.playerID);
             }
         }
     }

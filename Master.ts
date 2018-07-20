@@ -17,7 +17,7 @@ wsServer.on('connection', conn => {
 
         // first section of the message is message type
         switch (sections[0]) {
-            case 'REG':
+            case 'REG': {
                 // should be in format 'REG'
                 let [playerId, roomId]: [number, number] = roomMgr.handleRegisterPlayer();
                 clientSockets.set(nextNumber, new RemoteClientSocket(conn));
@@ -25,14 +25,28 @@ wsServer.on('connection', conn => {
                 nextNumber++;
                 conn.send(retString);
                 break;
-            case 'EXIT':
+            }
+            case 'EXIT': {
                 // should be in format 'EXIT@${playerID}@${roomID}@${socketId}'
                 roomMgr.handlePlayerDisconnect(parseInt(sections[1], 10), parseInt(sections[2], 10));
                 clientSockets.delete(parseInt(sections[3], 10));
                 conn.close();
                 break;
-            default:
+            }
+            case 'CHDIR': {
+                // should be in format 'CHDIR@${playerID}@${roomID}@${socketId}@${direction}'
+                let [playerId, roomId, socketId, direction] = sections.slice(1, 4).map(parseInt);
+                roomMgr.serverList[roomId].handleChangeDirection(playerId, direction);
+                break;
+            }
+            case 'REG_VP': {
+                // should be in format 'REG_VP@${playerIdToTrack}@${roomID}@${nRows}@${nCols}'
+                let [playerId, roomId, nRows, nCols, socketId] = sections.slice(1, 5).map(parseInt);
+                roomMgr.serverList[roomId].addNewWorldListener(clientSockets.get(socketId), playerId, nRows, nCols);
+            }
+            default: {
                 conn.send('UNKNOWN');
+            }
         }
     });
 

@@ -27,7 +27,7 @@ export class RemoteServer implements IServerAdapter {
     }
 
     handleRegisterToThisRoom(): number {
-        return this.room.registerPlayer();
+        return this.room.replaceAIWithPlayer();
     }
 
     dispatchNewWorld(): void {
@@ -36,5 +36,14 @@ export class RemoteServer implements IServerAdapter {
                 this.room.getListenerView(listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
             listener.clientSocket.pushWorld(JSON.stringify(worldObj));
         }
+    }
+
+    addNewWorldListener(remoteClientSocket: RemoteClientSocket, playerId: number, nRows: number, nCols: number): void {
+        this.listeners.push({
+            clientSocket: remoteClientSocket,
+            remotePlayerID: playerId,
+            viewNRows: nRows,
+            viewNCols: nCols
+        });
     }
 }
