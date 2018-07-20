@@ -10,9 +10,8 @@ const clientSockets: Map<number, RemoteClientSocket> = new Map<number, RemoteCli
 let nextNumber: number = 0;
 
 wsServer.on('connection', conn => {
-    console.log('New connection received.');
 
-    conn.on('message', message => {
+    conn.on('message', (message: WebSocket.Data) => {
         let sections: string[] = message.toString().split('@');
 
         // first section of the message is message type
@@ -35,14 +34,15 @@ wsServer.on('connection', conn => {
             }
             case 'CHDIR': {
                 // should be in format 'CHDIR@${playerID}@${roomID}@${socketId}@${direction}'
-                let [playerId, roomId, socketId, direction] = sections.slice(1, 4).map(parseInt);
+                let [playerId, roomId, socketId, direction] = sections.slice(1, 5).map((x: string) => parseInt(x, 10));
                 roomMgr.serverList[roomId].handleChangeDirection(playerId, direction);
                 break;
             }
             case 'REG_VP': {
                 // should be in format 'REG_VP@${playerIdToTrack}@${roomID}@${nRows}@${nCols}'
-                let [playerId, roomId, nRows, nCols, socketId] = sections.slice(1, 5).map(parseInt);
+                let [playerId, roomId, nRows, nCols, socketId] = sections.slice(1, 6).map((x: string) => parseInt(x, 10));
                 roomMgr.serverList[roomId].addNewWorldListener(clientSockets.get(socketId), playerId, nRows, nCols);
+                break;
             }
             default: {
                 conn.send('UNKNOWN');
@@ -50,5 +50,6 @@ wsServer.on('connection', conn => {
         }
     });
 
-    conn.send('');
+    // conn.send(''); @bug
+    // todo handle error
 });

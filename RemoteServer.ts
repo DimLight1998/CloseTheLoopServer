@@ -11,15 +11,16 @@ export class RemoteListener {
 }
 
 export class RemoteServer implements IServerAdapter {
-    room: GameRoom = null;
-    listeners: RemoteListener[] = [];
     static NRows: number = 80;
     static NCols: number = 80;
     static NPlayers: number = 13;
+    room: GameRoom = null;
+    listeners: RemoteListener[] = [];
 
     constructor() {
         this.room = new GameRoom(RemoteServer.NRows, RemoteServer.NCols, RemoteServer.NPlayers);
         this.room.setServerAdapter(this);
+        this.room.startNewGame();
     }
 
     handleChangeDirection(playerID: number, direction: number): void {

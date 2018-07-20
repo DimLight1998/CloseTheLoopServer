@@ -1,7 +1,5 @@
 import { IRoomMangerAdapter } from './IAdapter';
 import { RemoteServer } from './RemoteServer';
-import { ServerPlayerInfo } from './ServerPlayerInfo';
-import { GameAI } from './GameAI';
 
 export class RemoteRoomManager implements IRoomMangerAdapter {
     serverList: RemoteServer[] = [];
@@ -10,14 +8,23 @@ export class RemoteRoomManager implements IRoomMangerAdapter {
         for (let i: number = 0; i < this.serverList.length; i++) {
             for (let p of this.serverList[i].room.serverPlayerInfos) {
                 if (p.isAI) {
-                    let playerId:number = this.serverList[i].room.replaceAIWithPlayer();
+                    let playerId: number = this.serverList[i].room.replaceAIWithPlayer();
                     return [playerId, i];
                 }
             }
         }
 
-        this.serverList.push(new RemoteServer());
-        let playerId: number = this.serverList[this.serverList.length - 1].handleRegisterToThisRoom();
+        let playerId: number = null;
+
+        while (true) {
+            this.serverList.push(new RemoteServer());
+            playerId = this.serverList[this.serverList.length - 1].handleRegisterToThisRoom();
+            if (playerId !== null) {
+                break;
+            }
+            this.serverList.pop();
+        }
+
         return [playerId, this.serverList.length - 1];
     }
 

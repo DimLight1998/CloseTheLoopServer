@@ -1,5 +1,3 @@
-// todo keep this file sync with local until ddl.
-
 import { ServerPlayerInfo } from './ServerPlayerInfo';
 import { GameAI } from './GameAI';
 import { MyPoint, PayLoadJson, PlayerInfo } from './PlayerInfo';
@@ -21,7 +19,7 @@ export class GameRoom {
     trackMap: number[][];
     serverPlayerInfos: ServerPlayerInfo[];
     playerNum: number;// do not exceed 14
-    timer: NodeJS.Timer;
+    timer: any;
     lastUpdateTime: number;
     serverAdapter: IServerAdapter = null;
     playersToClear: [number, boolean][] = [];
@@ -186,9 +184,9 @@ export class GameRoom {
                         let a: number = player.headDirection;
                         let b: number = player.nextDirection;
                         let res: number;
-                        if ((a + 1) % 4 !== b) {// anti clock wise
+                        if ((a + 1) % 4 !== b) { // anti clock wise
                             res = (a + 1) % 4;
-                        } else {// clock wise
+                        } else { // clock wise
                             res = a;
                         }
                         player.tracks.push([player.headPos.x, player.headPos.y, res]);
@@ -253,81 +251,67 @@ export class GameRoom {
         }
     }
 
-    async fillPlayer(playerId: number): Promise<void> {
-            this.maxT++;
-            // flood fill
-            for (let r: number = 0; r < this.nRows; r++) {
-                for (let c: number = 0; c < this.nCols; c++) {
-                    if (this.mapStatus[r][c] !== this.maxT && this.colorMap[r][c] !== playerId && this.trackMap[r][c] !== playerId) {
+    async floodFill(r: number, c: number, playerId: number): Promise<void> {
+        // start flood fill
+        let adjToWall: boolean = false;
+        let queue: [number, number][] = [];
+        let storage: [number, number][] = [];
 
-                        // console.log(r, c, this.maxT);
-                        // const map: number[][] = [];
-                        // for (let i: number = 0; i < this.nRows; i++) {
-                        //     const line: number[] = [];
-                        //     for (let j: number = 0; j < this.nCols; j++) {
-                        //         if (this.colorMap[i][j] === playerId
-                        //             || this.trackMap[i][j] === playerId
-                        //             || this.mapStatus[i][j] === this.maxT) {
-                        //             line.push(1);
-                        //         } else {
-                        //             line.push(0);
-                        //         }
-                        //     }
-                        //     map.push(line);
-                        // }
-                        // console.log(map);
+        queue.push([r, c]);
+        storage.push([r, c]);
+        this.mapStatus[r][c] = this.maxT;
 
-                        // start flood fill
-                        let adjToWall: boolean = false;
-                        let queue: [number, number][] = [];
-                        let storage: [number, number][] = [];
+        while (queue.length > 0) {
+            let [x, y]: [number, number] = queue.pop();// convert queue to stack, performance enhance
 
-                        queue.push([r, c]);
-                        storage.push([r, c]);
-                        this.mapStatus[r][c] = this.maxT;
-
-                        while (queue.length > 0) {
-                            let [x, y]: [number, number] = queue.pop();// convert queue to stack, performance enhance
-
-                            for (let dir of GameRoom.directions) {
-                                let [nx, ny]: [number, number] = [x + dir.x, y + dir.y];
-                                if (this.atBorder(nx, ny)) {
-                                    adjToWall = true;
-                                } else {
-                                    if (this.colorMap[nx][ny] !== playerId
-                                        && this.trackMap[nx][ny] !== playerId
-                                        && this.mapStatus[nx][ny] !== this.maxT) {
-                                        this.mapStatus[nx][ny] = this.maxT;
-                                        queue.push([nx, ny]);
-                                        storage.push([nx, ny]);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!adjToWall) {
-                            // console.log(storage);
-
-                            // this block is not adjacent to a wall, so it should be colored
-                            for (const [x, y] of storage) {
-                                this.colorMap[x][y] = playerId;
-                            }
-                        }
+            for (let dir of GameRoom.directions) {
+                let [nx, ny]: [number, number] = [x + dir.x, y + dir.y];
+                if (this.atBorder(nx, ny)) {
+                    adjToWall = true;
+                } else {
+                    if (this.colorMap[nx][ny] !== playerId
+                        && this.trackMap[nx][ny] !== playerId
+                        && this.mapStatus[nx][ny] !== this.maxT) {
+                        this.mapStatus[nx][ny] = this.maxT;
+                        queue.push([nx, ny]);
+                        storage.push([nx, ny]);
                     }
                 }
             }
-
-            for (let r: number = 0; r < this.nRows; r++) {
-                for (let c: number = 0; c < this.nCols; c++) {
-                    if (this.trackMap[r][c] === playerId) {
-                        this.colorMap[r][c] = playerId;
-                        this.trackMap[r][c] = 0;
-                    }
-                }
-            }
-
-            this.serverPlayerInfos[playerId - 1].tracks = [];
         }
+
+        if (!adjToWall) {
+            // console.log(storage);
+
+            // this block is not adjacent to a wall, so it should be colored
+            for (const [x, y] of storage) {
+                this.colorMap[x][y] = playerId;
+            }
+        }
+    }
+
+    async fillPlayer(playerId: number): Promise<void> {
+        this.maxT++;
+        // flood fill
+        for (let r: number = 0; r < this.nRows; r++) {
+            for (let c: number = 0; c < this.nCols; c++) {
+                if (this.mapStatus[r][c] !== this.maxT && this.colorMap[r][c] !== playerId && this.trackMap[r][c] !== playerId) {
+                    await this.floodFill(r, c, playerId);
+                }
+            }
+        }
+
+        for (let r: number = 0; r < this.nRows; r++) {
+            for (let c: number = 0; c < this.nCols; c++) {
+                if (this.trackMap[r][c] === playerId) {
+                    this.colorMap[r][c] = playerId;
+                    this.trackMap[r][c] = 0;
+                }
+            }
+        }
+
+        this.serverPlayerInfos[playerId - 1].tracks = [];
+    }
 
     async updateColorFilling(): Promise<void> {
         /**
@@ -380,7 +364,7 @@ export class GameRoom {
             console.log('Warning! next update should happen ' + -duration + 'ms ago!');
             duration = 0;
         } else {
-            console.log('actually compute costs ' + (currentTime - this.lastUpdateTime) + 'ms');
+            // console.log('actually compute costs ' + (currentTime - this.lastUpdateTime) + 'ms');
         }
         this.timer = setTimeout(this.updateRound.bind(this), duration);
     }
@@ -509,7 +493,7 @@ export class GameRoom {
         for (let p of this.playersToClear) {
             const player: ServerPlayerInfo = this.serverPlayerInfos[p[0] - 1];
             player.tracks = [];
-            if (p[1]) {// @refactor
+            if (p[1]) { // @refactor
                 player.state = 1;
             }
         }
