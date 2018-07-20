@@ -30,5 +30,6 @@ export class RemoteRoomManager implements IRoomMangerAdapter {
 
     handlePlayerDisconnect(playerID: number, roomID: number): void {
         this.serverList[roomID].room.replacePlayerWithAI(playerID);
+        this.serverList[roomID].removeNewWorldListener(playerID);
     }
 }

@@ -7,9 +7,10 @@ import { RemoteClientSocket } from './RemoteClientSocket';
 const wsServer: WebSocket.Server = new WebSocket.Server({ port: 12306 });
 const roomMgr: RemoteRoomManager = new RemoteRoomManager();
 const clientSockets: Map<number, RemoteClientSocket> = new Map<number, RemoteClientSocket>();
+const socketMap: Map<WebSocket, () => void> = new Map();
 let nextNumber: number = 0;
 
-wsServer.on('connection', conn => {
+wsServer.on('connection', (conn: WebSocket) => {
 
     conn.on('message', (message: WebSocket.Data) => {
         let sections: string[] = message.toString().split('@');
@@ -19,8 +20,17 @@ wsServer.on('connection', conn => {
             case 'REG': {
                 // should be in format 'REG'
                 let [playerId, roomId]: [number, number] = roomMgr.handleRegisterPlayer();
-                clientSockets.set(nextNumber, new RemoteClientSocket(conn));
-                let retString: string = ['REG_OK', playerId, roomId, nextNumber].join('@');
+                let socketId: number = nextNumber;
+
+                clientSockets.set(socketId, new RemoteClientSocket(conn));
+                socketMap.set(conn, () => {
+                    roomMgr.handlePlayerDisconnect(playerId, roomId);
+                    clientSockets.delete(socketId);
+                    console.log(`player ${playerId} at room ${roomId} leaves`);
+                });
+
+                let retString: string = ['REG_OK', playerId, roomId, socketId].join('@');
+                console.log(`player ${playerId} at room ${roomId} enters`);
                 nextNumber++;
                 conn.send(retString);
                 break;
@@ -47,6 +57,19 @@ wsServer.on('connection', conn => {
             default: {
                 conn.send('UNKNOWN');
             }
+        }
+    });
+
+    conn.on('error', (err: Error) => {
+        console.log('error ocurred: ' + err);
+        conn.close();
+    });
+
+    conn.on('close', (code, reason) => {
+        console.log(code, reason);
+        const callback: () => void = socketMap.get(conn);
+        if (socketMap.delete(conn)) {
+            callback();
         }
     });
 

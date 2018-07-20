@@ -47,4 +47,8 @@ export class RemoteServer implements IServerAdapter {
             viewNCols: nCols
         });
     }
+
+    removeNewWorldListener(playerId: number): void {
+        this.listeners = this.listeners.filter(x => x.remotePlayerID !== playerId);
+    }
 }
