@@ -19,7 +19,7 @@ export interface IClientAdapter {
      * Send a registration information for a player to the server. Returns the id for the player.
      * Will eventually success.
      */
-    registerPlayer(): [number, number];// 多人模式下，在这里也能建立websocket连接
+    registerPlayer(onSuccess: (playerId: number, roomId: number) => void): void;// 多人模式下，在这里也能建立websocket连接
 
     /**
      * Send a registration information for a view port to the server.
@@ -36,7 +36,7 @@ export interface IServerAdapter {
 
     handleRegisterToThisRoom(): number;
 
-    dispatchNewWorld(): void;// 向所有注册的客户端发送各自的数据
+    dispatchNewWorld(): Promise<void>;// 向所有注册的客户端发送各自的数据
 }
 
 export interface IRoomMangerAdapter {
