@@ -29,6 +29,7 @@ export class GameRoom {
     rebornList: number[] = [];
     leaderBoard: [number, number][] = [];
     soundFxs: number[] = [];
+    newPlayers: number[] = [];
 
     mapStatus: number[][] = null;
     maxT: number;
@@ -474,6 +475,7 @@ export class GameRoom {
         const obj: ServerPlayerInfo = this.serverPlayerInfos[index];
         obj.isAI = false;
         this.addToClearList(obj.playerID, true); // wait for respawn
+        this.newPlayers.push(obj.playerID);
         return obj.playerID;
     }
 
@@ -585,6 +587,12 @@ export class GameRoom {
             if (p[1] === true) { // @refactor
                 player.state = 1;
                 this.soundFxs[player.playerID] = Math.max(this.soundFxs[player.playerID], 3);
+            }
+        }
+        while (this.newPlayers.length > 0) {
+            let id: number = this.newPlayers.pop();
+            if (this.serverPlayerInfos[id - 1].state === 1) {
+                this.serverPlayerInfos[id - 1].state = 2;
             }
         }
     }

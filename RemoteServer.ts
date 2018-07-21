@@ -31,7 +31,7 @@ export class RemoteServer implements IServerAdapter {
         return this.room.replaceAIWithPlayer();
     }
 
-    dispatchNewWorld(): void {
+    async dispatchNewWorld(): Promise<void> {
         for (let listener of this.listeners) {
             const worldObj: PayLoadJson =
                 this.room.getListenerView(listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
