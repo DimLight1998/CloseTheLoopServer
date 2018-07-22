@@ -1,6 +1,6 @@
 // todo keep this file sync with local until ddl.
 
-import { PayLoadJson } from './PlayerInfo';
+import { PayLoad } from './PayLoadProtobuf';
 
 // 一个视图需要一个adapter
 export interface IClientAdapter {
@@ -27,9 +27,11 @@ export interface IClientAdapter {
      */
     registerViewPort(playerID2Track: number, roomID: number,
         nRows: number, nCols: number,
-        callback: (info: PayLoadJson, deltaTime: number) => void): void;
+        callback: (info: PayLoad, deltaTime: number) => void): void;
 
     rebornPlayer(playerId: number): void;
+
+    leaveRoom(playerId: number): void;
 }
 
 // 一个房间需要一个server adapter

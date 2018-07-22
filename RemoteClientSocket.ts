@@ -7,11 +7,7 @@ export class RemoteClientSocket {
         this.webSocket = webSocket;
     }
 
-    pushWorld(worldJson: string): void {
-        let retObj: object = {
-            type: 'WORLD',
-            content: worldJson
-        };
-        this.webSocket.send(JSON.stringify(retObj));
+    pushWorld(worldBuffer: Uint8Array): void {
+        this.webSocket.send(worldBuffer.buffer);
     }
 }

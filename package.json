@@ -4,13 +4,17 @@
   "description": "Server for CloseTheLoop game.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pb_js": "pbjs -t static-module -w commonjs --keep-case PayLoad.proto -o PayLoadProtobuf.js",
+    "pb_ts": "pbts -o PayLoadProtobuf.d.ts PayLoadProtobuf.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/ndarray": "^1.0.6",
     "@types/protobufjs": "^6.0.0",
     "@types/ws": "5.1.2",
+    "ndarray": "^1.0.18",
     "protobufjs": "^6.8.8",
     "ts-node": "7.0.0",
     "typescript": "2.9.2",

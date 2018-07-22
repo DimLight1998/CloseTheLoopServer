@@ -1,7 +1,8 @@
 import { IServerAdapter } from './IAdapter';
 import { GameRoom } from './GameRoom';
-import { PayLoadJson } from './PlayerInfo';
 import { RemoteClientSocket } from './RemoteClientSocket';
+import { PayLoad } from './PayLoadProtobuf';
+import { Writer } from './node_modules/protobufjs';
 
 export class RemoteListener {
     clientSocket: RemoteClientSocket;
@@ -32,10 +33,13 @@ export class RemoteServer implements IServerAdapter {
     }
 
     async dispatchNewWorld(): Promise<void> {
+        this.room.initPlayerInfoProto();
         for (let listener of this.listeners) {
-            const worldObj: PayLoadJson =
-                this.room.getListenerView(listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
-            listener.clientSocket.pushWorld(JSON.stringify(worldObj));
+            // const worldObj: PayLoadJson =
+            // this.room.getListenerView(listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
+            const payload: Uint8Array = this.room.getListenerViewProtobuf(
+                listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
+            listener.clientSocket.pushWorld(payload);
         }
     }
 

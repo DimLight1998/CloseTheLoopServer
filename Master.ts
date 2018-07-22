@@ -11,6 +11,7 @@ const socketMap: Map<WebSocket, () => void> = new Map();
 let nextNumber: number = 0;
 
 wsServer.on('connection', (conn: WebSocket) => {
+    conn.binaryType = 'arraybuffer';
 
     conn.on('message', (message: WebSocket.Data) => {
         let sections: string[] = message.toString().split('@');
@@ -77,7 +78,4 @@ wsServer.on('connection', (conn: WebSocket) => {
             callback();
         }
     });
-
-    // conn.send(''); @bug
-    // todo handle error
 });

@@ -4,6 +4,7 @@ import { ServerPlayerInfo } from './ServerPlayerInfo';
 import { GameAI } from './GameAI';
 import { MyPoint, PayLoadJson, PlayerInfo } from './PlayerInfo';
 import { IServerAdapter } from './IAdapter';
+import { PayLoad, MyPointProto, PlayerInfoProto, Track, LeaderBoardItem, IPlayerInfoProto } from './PayLoadProtobuf';
 
 export class GameRoom {
     static directions: MyPoint[] = [
@@ -34,6 +35,7 @@ export class GameRoom {
 
     mapStatus: number[][] = null;
     maxT: number;
+    payload: PayLoad;
 
     constructor(nRows: number, nCols: number, playerNum: number) {
         this.nRows = nRows;
@@ -50,6 +52,16 @@ export class GameRoom {
 
         this.maxT = 0;
         this.soundFxs = Array(this.playerNum + 1).fill(0);
+
+        this.payload = new PayLoad();
+        this.payload.players = [];
+        this.payload.leaderBoard = [];
+        for (let i: number = 0; i < this.playerNum; i++) {
+            this.payload.players.push(new PlayerInfoProto());
+            this.payload.players[i].headPos = new MyPointProto();
+            this.payload.leaderBoard.push(new LeaderBoardItem());
+        }
+        this.payload.leftTop = new MyPointProto();
     }
 
     static create2DArray(nRows: number, nCols: number): number[][] {
@@ -75,7 +87,7 @@ export class GameRoom {
         return true;
     }
 
-    static isAlive(info: PlayerInfo): boolean {
+    static isAlive(info: PlayerInfo | IPlayerInfoProto): boolean {
         return info.state === 0 || info.state === 3;
     }
 
@@ -594,6 +606,58 @@ export class GameRoom {
             leaderBoard: this.leaderBoard,
             soundFx: this.soundFxs[playerID2Track]
         };
+    }
+
+    initPlayerInfoProto(): void {
+        for (let i: number = 0; i < this.playerNum; i++) {
+            this.payload.players[i].playerID = this.serverPlayerInfos[i].playerID;
+            this.payload.players[i].headPos.x = this.serverPlayerInfos[i].headPos.x;
+            this.payload.players[i].headPos.y = this.serverPlayerInfos[i].headPos.y;
+            this.payload.players[i].headDirection = this.serverPlayerInfos[i].headDirection;
+            this.payload.players[i].nBlocks = this.serverPlayerInfos[i].nBlocks;
+            this.payload.players[i].nKill = this.serverPlayerInfos[i].nKill;
+            this.payload.players[i].state = this.serverPlayerInfos[i].state;
+            this.payload.players[i].tracks = [];
+            for (let [x, y, d] of this.serverPlayerInfos[i].tracks) {
+                this.payload.players[i].tracks.push(new Track({ x: x, y: y, d: d }));
+            }
+            this.payload.leaderBoard[i].id = this.leaderBoard[i][0];
+            this.payload.leaderBoard[i].ratio = this.leaderBoard[i][1];
+        }
+    }
+
+    getListenerViewProtobuf(playerID2Track: number, viewNRows: number, viewNCols: number): Uint8Array {
+
+        const info: ServerPlayerInfo = this.serverPlayerInfos[playerID2Track - 1];
+        this.payload.leftTop.x = info.headPos.x - Math.floor(viewNRows / 2);
+        this.payload.leftTop.y = info.headPos.y - Math.floor(viewNCols / 2);
+
+        const [x1, x2, y1, y2]: [number, number, number, number]
+            = [this.payload.leftTop.x, this.payload.leftTop.x + viewNRows - 1,
+            this.payload.leftTop.y, this.payload.leftTop.y + viewNCols - 1];
+
+        this.payload.mapString = new Uint8Array(new ArrayBuffer(viewNRows * viewNCols));
+        let cnt: number = 0;
+        for (let r: number = x1; r <= x2; r++) {
+            for (let c: number = y1; c <= y2; c++) {
+                let color: number = 0;
+                let track: number = 0;
+                if (this.atBorder(r, c)) { // wall
+                    color = 15;
+                    track = 0;
+                } else if (this.outOfRange(r, c)) {
+                    color = track = 0;
+                } else {
+                    color = this.colorMap[r][c];
+                    track = this.trackMap[r][c];
+                }
+                // tslint:disable-next-line:no-bitwise
+                this.payload.mapString[cnt++] = (track << 4 | color);// low bit for color
+            }
+        }
+        this.payload.soundFx = this.soundFxs[playerID2Track];
+
+        return PayLoad.encode(this.payload).finish();
     }
 
     /**
