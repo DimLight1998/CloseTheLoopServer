@@ -3,8 +3,22 @@
 import WebSocket from 'ws';
 import { RemoteRoomManager } from './RemoteRoomManager';
 import { RemoteClientSocket } from './RemoteClientSocket';
+import * as https from 'https';
+import * as fs from 'fs';
 
-const wsServer: WebSocket.Server = new WebSocket.Server({ port: 12306 });
+const keyPath: string = '/home/ubuntu/domain.key';
+const certPath: string = '/homt/ubuntu/chained.pem';
+const options: any = {
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(certPath)
+};
+
+let server: https.Server = https.createServer(options, (req, res) => {
+    res.writeHead(403);
+    res.end('Hello from server');
+}).listen(12306);
+
+const wsServer: WebSocket.Server = new WebSocket.Server({ server: server, port: 12306 });
 const roomMgr: RemoteRoomManager = new RemoteRoomManager();
 const clientSockets: Map<number, RemoteClientSocket> = new Map<number, RemoteClientSocket>();
 const socketMap: Map<WebSocket, () => void> = new Map();
