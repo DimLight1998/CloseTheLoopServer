@@ -18,7 +18,7 @@ let server: https.Server = https.createServer(options, (req, res) => {
     res.end('Hello from server');
 }).listen(12306);
 
-const wsServer: WebSocket.Server = new WebSocket.Server({ server: server, port: 12306 });
+const wsServer: WebSocket.Server = new WebSocket.Server({ server: server });
 const roomMgr: RemoteRoomManager = new RemoteRoomManager();
 const clientSockets: Map<number, RemoteClientSocket> = new Map<number, RemoteClientSocket>();
 const socketMap: Map<WebSocket, () => void> = new Map();
