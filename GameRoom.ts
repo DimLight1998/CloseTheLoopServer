@@ -332,7 +332,7 @@ export class GameRoom {
         return false;
     }
 
-    async fillPlayer(playerId: number): Promise<boolean> {
+    fillPlayer(playerId: number): boolean {
         // let cur: number = Date.now();
         let success: boolean = false;
 
@@ -341,7 +341,7 @@ export class GameRoom {
         for (let r: number = 0; r < this.nRows; r++) {
             for (let c: number = 0; c < this.nCols; c++) {
                 if (this.mapStatus[r][c] !== this.maxT && this.colorMap[r][c] !== playerId && this.trackMap[r][c] !== playerId) {
-                    success = (await this.floodFill(r, c, playerId)) || success;
+                    success = this.floodFill(r, c, playerId) || success;
                 }
             }
         }
@@ -362,7 +362,7 @@ export class GameRoom {
         // console.log('bfs costs ' + (Date.now() - cur) + 'ms');
     }
 
-    async updateColorFilling(): Promise<void> {
+    updateColorFilling(): void {
         /**
          * This function will consider color and track with id `walledId` as wall.
          */
@@ -374,7 +374,7 @@ export class GameRoom {
 
         // for elements still in the potential list, fill for them
         for (let playerId of this.potentialFillList) {
-            let success: boolean = await this.fillPlayer(playerId);
+            let success: boolean = this.fillPlayer(playerId);
             if (success) {
                 this.soundFxs[playerId] = Math.max(1, this.soundFxs[playerId]);
             }
@@ -413,15 +413,15 @@ export class GameRoom {
         this.leaderBoard.sort(([, score1], [, score2]) => score2 - score1);
     }
 
-    async updateAIs(): Promise<void> {
+    updateAIs(): void {
         for (const player of this.serverPlayerInfos) {
             if (GameRoom.isAlive(player)) {
-                await player.aiInstance.updateAI();
+                player.aiInstance.updateAI();
             }
         }
         for (const player of this.serverPlayerInfos) {
             if (GameRoom.isAlive(player)) {
-                await player.aiInstance.lateUpdateAI();
+                player.aiInstance.lateUpdateAI();
             }
         }
     }
@@ -432,7 +432,7 @@ export class GameRoom {
         }
     }
 
-    async updateHumanReborn(): Promise<void> {
+    updateHumanReborn(): void {
         const MaxChoice: number = 10;
         if (this.rebornHumanList.length === 0) {
             return;
@@ -466,25 +466,25 @@ export class GameRoom {
     /**
      * update all players' position logically. if it has a server adapter, dispatch the world to other clients.
      */
-    async updateRound(): Promise<void> {
+    updateRound(): void {
         this.lastUpdateTime = Date.now();
         this.playersToClear = [];
         this.potentialFillList = [];
         this.initSounds();
         this.updateDyingPlayers();
-        await this.updateHumanReborn();
+        this.updateHumanReborn();
         this.updatePlayerPos();
         this.updatePlayerReborn();
         this.updateTrackCutting();
         this.updatePlayerOverlapping();
-        await this.updateColorFilling();
-        await this.clearPlayers();
+        this.updateColorFilling();
+        this.clearPlayers();
         this.updateDeadPlayer();
         this.updateLeaderBoard();
         if (this.serverAdapter !== null) {
             this.serverAdapter.dispatchNewWorld();
         }
-        await this.updateAIs();
+        this.updateAIs();
         let currentTime: number = Date.now();
         let duration: number = this.lastUpdateTime + GameRoom.roundDuration - currentTime;
         if (duration < 0) {

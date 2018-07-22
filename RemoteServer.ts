@@ -32,12 +32,12 @@ export class RemoteServer implements IServerAdapter {
         return this.room.replaceAIWithPlayer();
     }
 
-    async dispatchNewWorld(): Promise<void> {
+    dispatchNewWorld(): void {
         this.room.initPlayerInfoProto();
         for (let listener of this.listeners) {
             const payload: Uint8Array = this.room.getListenerViewProtobuf(
                 listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
-            await listener.clientSocket.pushWorld(payload);
+            listener.clientSocket.pushWorld(payload);
         }
     }
 
