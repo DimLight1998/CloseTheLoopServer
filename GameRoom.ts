@@ -1,3 +1,5 @@
+// todo keep this file sync with local until ddl.
+
 import { ServerPlayerInfo } from './ServerPlayerInfo';
 import { GameAI } from './GameAI';
 import { MyPoint, PayLoadJson, PlayerInfo } from './PlayerInfo';
@@ -25,6 +27,10 @@ export class GameRoom {
     playersToClear: [number, boolean][] = [];
     potentialFillList: number[] = [];
     rebornList: number[] = [];
+    leaderBoard: [number, number][] = [];
+    soundFxs: number[] = [];
+    newPlayers: number[] = [];
+    rebornHumanList: number[] = [];
 
     mapStatus: number[][] = null;
     maxT: number;
@@ -36,11 +42,22 @@ export class GameRoom {
         this.colorMap = GameRoom.create2DArray(nRows, nCols);
         this.trackMap = GameRoom.create2DArray(nRows, nCols);
         this.mapStatus = GameRoom.create2DArray(nRows, nCols);
+
+        GameAI.vis = GameRoom.create3DArray(nRows, nCols, 4);
+        GameAI.max_t = 0;
+        GameAI.prevDir = GameRoom.create3DArray(nRows, nCols, 4);
+        GameAI.dist = GameRoom.create3DArray(nRows, nCols, 4);
+
         this.maxT = 0;
+        this.soundFxs = Array(this.playerNum + 1).fill(0);
     }
 
     static create2DArray(nRows: number, nCols: number): number[][] {
         return Array(nRows).fill(0).map(() => Array(nCols).fill(0));
+    }
+
+    static create3DArray(nRows: number, nCols: number, nDims: number): number[][][] {
+        return Array(nRows).fill(0).map(() => Array(nCols).fill(0).map(() => Array(nDims).fill(0)));
     }
 
     static randInt(l: number, r: number): number {
@@ -137,15 +154,19 @@ export class GameRoom {
             const info: ServerPlayerInfo = {
                 playerID: i + 1, // 0 reserverd for space
                 isAI: true,
-                aiInstance: new GameAI(this, i + 1),
+                aiInstance: null,
                 headPos: null, // do it later
                 headDirection: 0, // up
                 nBlocks: 0, // do it later
+                nKill: 0,
                 state: 2, // 0 活着，1正在爆炸，2死了
                 nextDirection: 0, // same as headDirection
                 tracks: []
             };
             this.serverPlayerInfos.push(info);
+
+            info.aiInstance = new GameAI(this, i + 1);
+
             this.rebornList.push(info.playerID);
         }
     }
@@ -220,6 +241,12 @@ export class GameRoom {
                         && !this.atBorder(otherPlayer.headPos.x, otherPlayer.headPos.y)) {// will be killed by wall
                         if (this.colorMap[otherPlayer.headPos.x][otherPlayer.headPos.y] !== otherPlayer.playerID) {
                             this.addToClearList(otherPlayer.playerID, true);
+
+                            // update sound
+                            this.soundFxs[player.playerID] = Math.max(this.soundFxs[player.playerID], 2);
+
+                            // update nKill
+                            this.getPlayerInfoById(player.playerID).nKill++;
                         } else {
                             this.addToClearList(otherPlayer.playerID, false);
                         }
@@ -243,6 +270,8 @@ export class GameRoom {
                             otherPlayer.headPos.x === curPlayerX &&
                             otherPlayer.headPos.y === curPlayerY &&
                             this.colorMap[otherPlayer.headPos.x][otherPlayer.headPos.y] !== otherPlayer.playerID) {
+                            this.soundFxs[player.playerID] = Math.max(this.soundFxs[player.playerID], 2);
+                            this.getPlayerInfoById(player.playerID).nKill++;
                             this.addToClearList(otherPlayer.playerID, true);
                         }
                     }
@@ -251,7 +280,7 @@ export class GameRoom {
         }
     }
 
-    async floodFill(r: number, c: number, playerId: number): Promise<void> {
+    floodFill(r: number, c: number, playerId: number): boolean {
         // start flood fill
         let adjToWall: boolean = false;
         let queue: [number, number][] = [];
@@ -287,16 +316,21 @@ export class GameRoom {
             for (const [x, y] of storage) {
                 this.colorMap[x][y] = playerId;
             }
+            return true;
         }
+        return false;
     }
 
-    async fillPlayer(playerId: number): Promise<void> {
+    async fillPlayer(playerId: number): Promise<boolean> {
+        // let cur: number = Date.now();
+        let success: boolean = false;
+
         this.maxT++;
         // flood fill
         for (let r: number = 0; r < this.nRows; r++) {
             for (let c: number = 0; c < this.nCols; c++) {
                 if (this.mapStatus[r][c] !== this.maxT && this.colorMap[r][c] !== playerId && this.trackMap[r][c] !== playerId) {
-                    await this.floodFill(r, c, playerId);
+                    success = (await this.floodFill(r, c, playerId)) || success;
                 }
             }
         }
@@ -306,11 +340,15 @@ export class GameRoom {
                 if (this.trackMap[r][c] === playerId) {
                     this.colorMap[r][c] = playerId;
                     this.trackMap[r][c] = 0;
+                    success = true;
                 }
             }
         }
 
         this.serverPlayerInfos[playerId - 1].tracks = [];
+        return success;
+
+        // console.log('bfs costs ' + (Date.now() - cur) + 'ms');
     }
 
     async updateColorFilling(): Promise<void> {
@@ -325,7 +363,10 @@ export class GameRoom {
 
         // for elements still in the potential list, fill for them
         for (let playerId of this.potentialFillList) {
-            await this.fillPlayer(playerId);
+            let success: boolean = await this.fillPlayer(playerId);
+            if (success) {
+                this.soundFxs[playerId] = Math.max(1, this.soundFxs[playerId]);
+            }
         }
     }
 
@@ -335,9 +376,85 @@ export class GameRoom {
             info.headPos = this.randomSpawnNewPlayer(playerID);
             if (info.headPos !== null) {
                 info.state = 3;
+                info.nBlocks = 0;
+                info.nKill = 0;
+                info.aiInstance.init();
             }
         }
         this.rebornList = [];
+    }
+
+    updateLeaderBoard(): void {
+        let count: number[] = Array.from({ length: this.playerNum + 1 }, () => 0);
+        for (let r: number = 0; r < this.nRows; r++) {
+            for (let c: number = 0; c < this.nCols; c++) {
+                count[this.colorMap[r][c]]++;
+            }
+        }
+
+        for (let i: number = 0; i < count.length; i++) {
+            count[i] /= this.nRows * this.nCols;
+        }
+
+        this.leaderBoard = [];
+        for (let i: number = 1; i < count.length; i++) {
+            this.leaderBoard.push([i, count[i]]);
+        }
+        this.leaderBoard.sort(([, score1], [, score2]) => score2 - score1);
+
+        for (let player of this.serverPlayerInfos) {
+            player.nBlocks = count[player.playerID];
+        }
+    }
+
+    async updateAIs(): Promise<void> {
+        for (const player of this.serverPlayerInfos) {
+            if (GameRoom.isAlive(player)) {
+                await player.aiInstance.updateAI();
+            }
+        }
+        for (const player of this.serverPlayerInfos) {
+            if (GameRoom.isAlive(player)) {
+                await player.aiInstance.lateUpdateAI();
+            }
+        }
+    }
+
+    initSounds(): void {
+        for (let i: number = 0; i <= this.playerNum; i++) {
+            this.soundFxs[i] = 0;
+        }
+    }
+
+    async updateHumanReborn(): Promise<void> {
+        const MaxChoice: number = 10;
+        if (this.rebornHumanList.length === 0) {
+            return;
+        }
+        let choices: ([number, number][])[] = Array(this.rebornHumanList.length).fill([]);
+        for (let r: number = 0; r < this.nRows; r++) {
+            for (let c: number = 0; c < this.nCols; c++) {
+                if (this.colorMap[r][c] === 0) {
+                    continue;
+                }
+                let index: number = this.rebornHumanList.indexOf(this.colorMap[r][c]);
+                if (index !== -1 && choices[index].length < MaxChoice) {
+                    choices[index].push([r, c]);
+                }
+            }
+        }
+        for (let i: number = 0; i < this.rebornHumanList.length; i++) {
+            let playerId: number = this.rebornHumanList[i];
+            if (choices[i].length > 0) {
+                let [r, c]: [number, number] = choices[i][GameRoom.randInt(0, choices[i].length - 1)];
+                this.serverPlayerInfos[playerId - 1].headPos.x = r;
+                this.serverPlayerInfos[playerId - 1].headPos.y = c;
+                this.serverPlayerInfos[playerId - 1].state = 3;
+            } else {
+                this.serverPlayerInfos[playerId - 1].state = 4;
+            }
+        }
+        this.rebornHumanList = [];
     }
 
     /**
@@ -347,7 +464,9 @@ export class GameRoom {
         this.lastUpdateTime = Date.now();
         this.playersToClear = [];
         this.potentialFillList = [];
+        this.initSounds();
         this.updateDyingPlayers();
+        await this.updateHumanReborn();
         this.updatePlayerPos();
         this.updatePlayerReborn();
         this.updateTrackCutting();
@@ -355,9 +474,11 @@ export class GameRoom {
         await this.updateColorFilling();
         await this.clearPlayers();
         this.updateDeadPlayer();
+        this.updateLeaderBoard();
         if (this.serverAdapter !== null) {
             this.serverAdapter.dispatchNewWorld();
         }
+        await this.updateAIs();
         let currentTime: number = Date.now();
         let duration: number = this.lastUpdateTime + GameRoom.roundDuration - currentTime;
         if (duration < 0) {
@@ -385,16 +506,15 @@ export class GameRoom {
         }
         const index: number = validIndexes[GameRoom.randInt(0, validIndexes.length - 1)];
         const obj: ServerPlayerInfo = this.serverPlayerInfos[index];
-        obj.isAI = false;
-        obj.aiInstance = null;
-        // todo respawn obj
+        this.newPlayers.push(obj.playerID);
         return obj.playerID;
     }
 
     replacePlayerWithAI(playerID: number): void {
         const obj: ServerPlayerInfo = this.serverPlayerInfos[playerID - 1];
         obj.isAI = true;
-        obj.aiInstance = new GameAI(this, playerID);
+        obj.aiInstance.init();
+        this.addToClearList(obj.playerID, true);
     }
 
     /**
@@ -454,7 +574,8 @@ export class GameRoom {
                 headDirection: info.headDirection,
                 nBlocks: info.nBlocks,
                 state: info.state,
-                tracks: info.tracks
+                tracks: info.tracks,
+                nKill: info.nKill
             });
             if (info.playerID === playerID2Track) {
                 leftTop = {
@@ -469,14 +590,30 @@ export class GameRoom {
         return {
             mapString,
             players: playerInfos,
-            leftTop
+            leftTop,
+            leaderBoard: this.leaderBoard,
+            soundFx: this.soundFxs[playerID2Track]
         };
     }
 
     /**
      * Clear player's track map and/or color map.
      */
-    async clearPlayers(): Promise<void> {
+    clearPlayers(): void {
+        for (let id of this.newPlayers) {
+            this.addToClearList(id, true);
+        }
+        for (let p of this.playersToClear) {
+            const player: ServerPlayerInfo = this.serverPlayerInfos[p[0] - 1];
+            player.tracks = [];
+            if (p[1] === true) { // @refactor
+                player.state = 1;
+                this.soundFxs[player.playerID] = Math.max(this.soundFxs[player.playerID], 3);
+                if (!player.isAI) {// is human
+                    p[1] = false;// do not clear color
+                }
+            }
+        }
         for (let i: number = 0; i < this.nRows; i++) {
             for (let j: number = 0; j < this.nCols; j++) {
                 for (let p of this.playersToClear) {
@@ -490,20 +627,27 @@ export class GameRoom {
                 }
             }
         }
-        for (let p of this.playersToClear) {
-            const player: ServerPlayerInfo = this.serverPlayerInfos[p[0] - 1];
-            player.tracks = [];
-            if (p[1]) { // @refactor
-                player.state = 1;
+        while (this.newPlayers.length > 0) {
+            let id: number = this.newPlayers.pop();
+            if (this.serverPlayerInfos[id - 1].state === 1) {
+                this.serverPlayerInfos[id - 1].state = 4;
             }
+            this.serverPlayerInfos[id - 1].isAI = false;
         }
     }
 
     updateDeadPlayer(): void {
         for (let info of this.serverPlayerInfos) {
-            if (info.state === 2) {
+            if (info.state === 2 && info.isAI) {
+                this.rebornList.push(info.playerID);
+            } else if (info.state === 4) {
+                info.state = 2;
                 this.rebornList.push(info.playerID);
             }
         }
+    }
+
+    rebornHumanPlayer(playerId: number): void {
+        this.rebornHumanList.push(playerId);
     }
 }
