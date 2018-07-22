@@ -31,7 +31,7 @@ export class RemoteServer implements IServerAdapter {
         return this.room.replaceAIWithPlayer();
     }
 
-    dispatchNewWorld(): void {
+    async dispatchNewWorld(): Promise<void> {
         for (let listener of this.listeners) {
             const worldObj: PayLoadJson =
                 this.room.getListenerView(listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
@@ -50,5 +50,10 @@ export class RemoteServer implements IServerAdapter {
 
     removeNewWorldListener(playerId: number): void {
         this.listeners = this.listeners.filter(x => x.remotePlayerID !== playerId);
+    }
+
+
+    handleRebornPlayer(playerId: number): void {
+        this.room.rebornHumanPlayer(playerId);
     }
 }
