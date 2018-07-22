@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { PayLoad } from './PayLoadProtobuf';
 
 export class RemoteClientSocket {
     webSocket: WebSocket = null;
@@ -8,6 +9,6 @@ export class RemoteClientSocket {
     }
 
     pushWorld(worldBuffer: Uint8Array): void {
-        this.webSocket.send(worldBuffer.buffer);
+        this.webSocket.send(worldBuffer);
     }
 }
