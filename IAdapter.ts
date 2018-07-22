@@ -28,6 +28,8 @@ export interface IClientAdapter {
     registerViewPort(playerID2Track: number, roomID: number,
         nRows: number, nCols: number,
         callback: (info: PayLoadJson, deltaTime: number) => void): void;
+
+    rebornPlayer(playerId: number): void;
 }
 
 // 一个房间需要一个server adapter
@@ -35,6 +37,8 @@ export interface IServerAdapter {
     handleChangeDirection(playerID: number, direction: number): void;
 
     handleRegisterToThisRoom(): number;
+
+    handleRebornPlayer(playerId: number): void;
 
     dispatchNewWorld(): Promise<void>;// 向所有注册的客户端发送各自的数据
 }

@@ -54,6 +54,11 @@ wsServer.on('connection', (conn: WebSocket) => {
                 roomMgr.serverList[roomId].addNewWorldListener(clientSockets.get(socketId), playerId, nRows, nCols);
                 break;
             }
+            case 'REBORN': {
+                let [playerId, roomId] = sections.slice(1, 3).map(x => parseInt(x, 10));
+                roomMgr.serverList[roomId].handleRebornPlayer(playerId);
+                break;
+            }
             default: {
                 conn.send('UNKNOWN');
             }

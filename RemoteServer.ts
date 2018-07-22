@@ -51,4 +51,9 @@ export class RemoteServer implements IServerAdapter {
     removeNewWorldListener(playerId: number): void {
         this.listeners = this.listeners.filter(x => x.remotePlayerID !== playerId);
     }
+
+
+    handleRebornPlayer(playerId: number): void {
+        this.room.rebornHumanPlayer(playerId);
+    }
 }
