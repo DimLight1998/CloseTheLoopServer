@@ -15,8 +15,8 @@ $root.MyPointProto = (function() {
      * Properties of a MyPointProto.
      * @exports IMyPointProto
      * @interface IMyPointProto
-     * @property {number|null} [x] MyPointProto x
-     * @property {number|null} [y] MyPointProto y
+     * @property {number} x MyPointProto x
+     * @property {number} y MyPointProto y
      */
 
     /**
@@ -74,10 +74,8 @@ $root.MyPointProto = (function() {
     MyPointProto.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        if (message.x != null && message.hasOwnProperty("x"))
-            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.x);
-        if (message.y != null && message.hasOwnProperty("y"))
-            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.y);
+        writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.x);
+        writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.y);
         return writer;
     };
 
@@ -123,6 +121,10 @@ $root.MyPointProto = (function() {
                 break;
             }
         }
+        if (!message.hasOwnProperty("x"))
+            throw $util.ProtocolError("missing required 'x'", { instance: message });
+        if (!message.hasOwnProperty("y"))
+            throw $util.ProtocolError("missing required 'y'", { instance: message });
         return message;
     };
 
@@ -153,12 +155,10 @@ $root.MyPointProto = (function() {
     MyPointProto.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (message.x != null && message.hasOwnProperty("x"))
-            if (!$util.isInteger(message.x))
-                return "x: integer expected";
-        if (message.y != null && message.hasOwnProperty("y"))
-            if (!$util.isInteger(message.y))
-                return "y: integer expected";
+        if (!$util.isInteger(message.x))
+            return "x: integer expected";
+        if (!$util.isInteger(message.y))
+            return "y: integer expected";
         return null;
     };
 
@@ -225,12 +225,11 @@ $root.PlayerInfoProto = (function() {
      * Properties of a PlayerInfoProto.
      * @exports IPlayerInfoProto
      * @interface IPlayerInfoProto
-     * @property {number|null} [playerID] PlayerInfoProto playerID
-     * @property {IMyPointProto|null} [headPos] PlayerInfoProto headPos
-     * @property {number|null} [headDirection] PlayerInfoProto headDirection
-     * @property {number|null} [nBlocks] PlayerInfoProto nBlocks
-     * @property {number|null} [nKill] PlayerInfoProto nKill
-     * @property {number|null} [state] PlayerInfoProto state
+     * @property {number} playerID PlayerInfoProto playerID
+     * @property {IMyPointProto} headPos PlayerInfoProto headPos
+     * @property {number} headDirection PlayerInfoProto headDirection
+     * @property {number} nKill PlayerInfoProto nKill
+     * @property {number} state PlayerInfoProto state
      * @property {Array.<ITrack>|null} [tracks] PlayerInfoProto tracks
      */
 
@@ -260,7 +259,7 @@ $root.PlayerInfoProto = (function() {
 
     /**
      * PlayerInfoProto headPos.
-     * @member {IMyPointProto|null|undefined} headPos
+     * @member {IMyPointProto} headPos
      * @memberof PlayerInfoProto
      * @instance
      */
@@ -273,14 +272,6 @@ $root.PlayerInfoProto = (function() {
      * @instance
      */
     PlayerInfoProto.prototype.headDirection = 0;
-
-    /**
-     * PlayerInfoProto nBlocks.
-     * @member {number} nBlocks
-     * @memberof PlayerInfoProto
-     * @instance
-     */
-    PlayerInfoProto.prototype.nBlocks = 0;
 
     /**
      * PlayerInfoProto nKill.
@@ -330,21 +321,14 @@ $root.PlayerInfoProto = (function() {
     PlayerInfoProto.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        if (message.playerID != null && message.hasOwnProperty("playerID"))
-            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.playerID);
-        if (message.headPos != null && message.hasOwnProperty("headPos"))
-            $root.MyPointProto.encode(message.headPos, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-        if (message.headDirection != null && message.hasOwnProperty("headDirection"))
-            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.headDirection);
-        if (message.nBlocks != null && message.hasOwnProperty("nBlocks"))
-            writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.nBlocks);
-        if (message.nKill != null && message.hasOwnProperty("nKill"))
-            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.nKill);
-        if (message.state != null && message.hasOwnProperty("state"))
-            writer.uint32(/* id 6, wireType 0 =*/48).uint32(message.state);
+        writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.playerID);
+        $root.MyPointProto.encode(message.headPos, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+        writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.headDirection);
+        writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.nKill);
+        writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.state);
         if (message.tracks != null && message.tracks.length)
             for (var i = 0; i < message.tracks.length; ++i)
-                $root.Track.encode(message.tracks[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+                $root.Track.encode(message.tracks[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
         return writer;
     };
 
@@ -389,15 +373,12 @@ $root.PlayerInfoProto = (function() {
                 message.headDirection = reader.uint32();
                 break;
             case 4:
-                message.nBlocks = reader.uint32();
-                break;
-            case 5:
                 message.nKill = reader.uint32();
                 break;
-            case 6:
+            case 5:
                 message.state = reader.uint32();
                 break;
-            case 7:
+            case 6:
                 if (!(message.tracks && message.tracks.length))
                     message.tracks = [];
                 message.tracks.push($root.Track.decode(reader, reader.uint32()));
@@ -407,6 +388,16 @@ $root.PlayerInfoProto = (function() {
                 break;
             }
         }
+        if (!message.hasOwnProperty("playerID"))
+            throw $util.ProtocolError("missing required 'playerID'", { instance: message });
+        if (!message.hasOwnProperty("headPos"))
+            throw $util.ProtocolError("missing required 'headPos'", { instance: message });
+        if (!message.hasOwnProperty("headDirection"))
+            throw $util.ProtocolError("missing required 'headDirection'", { instance: message });
+        if (!message.hasOwnProperty("nKill"))
+            throw $util.ProtocolError("missing required 'nKill'", { instance: message });
+        if (!message.hasOwnProperty("state"))
+            throw $util.ProtocolError("missing required 'state'", { instance: message });
         return message;
     };
 
@@ -437,26 +428,19 @@ $root.PlayerInfoProto = (function() {
     PlayerInfoProto.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (message.playerID != null && message.hasOwnProperty("playerID"))
-            if (!$util.isInteger(message.playerID))
-                return "playerID: integer expected";
-        if (message.headPos != null && message.hasOwnProperty("headPos")) {
+        if (!$util.isInteger(message.playerID))
+            return "playerID: integer expected";
+        {
             var error = $root.MyPointProto.verify(message.headPos);
             if (error)
                 return "headPos." + error;
         }
-        if (message.headDirection != null && message.hasOwnProperty("headDirection"))
-            if (!$util.isInteger(message.headDirection))
-                return "headDirection: integer expected";
-        if (message.nBlocks != null && message.hasOwnProperty("nBlocks"))
-            if (!$util.isInteger(message.nBlocks))
-                return "nBlocks: integer expected";
-        if (message.nKill != null && message.hasOwnProperty("nKill"))
-            if (!$util.isInteger(message.nKill))
-                return "nKill: integer expected";
-        if (message.state != null && message.hasOwnProperty("state"))
-            if (!$util.isInteger(message.state))
-                return "state: integer expected";
+        if (!$util.isInteger(message.headDirection))
+            return "headDirection: integer expected";
+        if (!$util.isInteger(message.nKill))
+            return "nKill: integer expected";
+        if (!$util.isInteger(message.state))
+            return "state: integer expected";
         if (message.tracks != null && message.hasOwnProperty("tracks")) {
             if (!Array.isArray(message.tracks))
                 return "tracks: array expected";
@@ -490,8 +474,6 @@ $root.PlayerInfoProto = (function() {
         }
         if (object.headDirection != null)
             message.headDirection = object.headDirection >>> 0;
-        if (object.nBlocks != null)
-            message.nBlocks = object.nBlocks >>> 0;
         if (object.nKill != null)
             message.nKill = object.nKill >>> 0;
         if (object.state != null)
@@ -528,7 +510,6 @@ $root.PlayerInfoProto = (function() {
             object.playerID = 0;
             object.headPos = null;
             object.headDirection = 0;
-            object.nBlocks = 0;
             object.nKill = 0;
             object.state = 0;
         }
@@ -538,8 +519,6 @@ $root.PlayerInfoProto = (function() {
             object.headPos = $root.MyPointProto.toObject(message.headPos, options);
         if (message.headDirection != null && message.hasOwnProperty("headDirection"))
             object.headDirection = message.headDirection;
-        if (message.nBlocks != null && message.hasOwnProperty("nBlocks"))
-            object.nBlocks = message.nBlocks;
         if (message.nKill != null && message.hasOwnProperty("nKill"))
             object.nKill = message.nKill;
         if (message.state != null && message.hasOwnProperty("state"))
@@ -572,9 +551,9 @@ $root.Track = (function() {
      * Properties of a Track.
      * @exports ITrack
      * @interface ITrack
-     * @property {number|null} [x] Track x
-     * @property {number|null} [y] Track y
-     * @property {number|null} [d] Track d
+     * @property {number} x Track x
+     * @property {number} y Track y
+     * @property {number} d Track d
      */
 
     /**
@@ -640,12 +619,9 @@ $root.Track = (function() {
     Track.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        if (message.x != null && message.hasOwnProperty("x"))
-            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.x);
-        if (message.y != null && message.hasOwnProperty("y"))
-            writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.y);
-        if (message.d != null && message.hasOwnProperty("d"))
-            writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.d);
+        writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.x);
+        writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.y);
+        writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.d);
         return writer;
     };
 
@@ -694,6 +670,12 @@ $root.Track = (function() {
                 break;
             }
         }
+        if (!message.hasOwnProperty("x"))
+            throw $util.ProtocolError("missing required 'x'", { instance: message });
+        if (!message.hasOwnProperty("y"))
+            throw $util.ProtocolError("missing required 'y'", { instance: message });
+        if (!message.hasOwnProperty("d"))
+            throw $util.ProtocolError("missing required 'd'", { instance: message });
         return message;
     };
 
@@ -724,15 +706,12 @@ $root.Track = (function() {
     Track.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (message.x != null && message.hasOwnProperty("x"))
-            if (!$util.isInteger(message.x))
-                return "x: integer expected";
-        if (message.y != null && message.hasOwnProperty("y"))
-            if (!$util.isInteger(message.y))
-                return "y: integer expected";
-        if (message.d != null && message.hasOwnProperty("d"))
-            if (!$util.isInteger(message.d))
-                return "d: integer expected";
+        if (!$util.isInteger(message.x))
+            return "x: integer expected";
+        if (!$util.isInteger(message.y))
+            return "y: integer expected";
+        if (!$util.isInteger(message.d))
+            return "d: integer expected";
         return null;
     };
 
@@ -804,8 +783,8 @@ $root.LeaderBoardItem = (function() {
      * Properties of a LeaderBoardItem.
      * @exports ILeaderBoardItem
      * @interface ILeaderBoardItem
-     * @property {number|null} [id] LeaderBoardItem id
-     * @property {number|null} [ratio] LeaderBoardItem ratio
+     * @property {number} id LeaderBoardItem id
+     * @property {number} ratio LeaderBoardItem ratio
      */
 
     /**
@@ -863,10 +842,8 @@ $root.LeaderBoardItem = (function() {
     LeaderBoardItem.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        if (message.id != null && message.hasOwnProperty("id"))
-            writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.id);
-        if (message.ratio != null && message.hasOwnProperty("ratio"))
-            writer.uint32(/* id 2, wireType 5 =*/21).float(message.ratio);
+        writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.id);
+        writer.uint32(/* id 2, wireType 5 =*/21).float(message.ratio);
         return writer;
     };
 
@@ -912,6 +889,10 @@ $root.LeaderBoardItem = (function() {
                 break;
             }
         }
+        if (!message.hasOwnProperty("id"))
+            throw $util.ProtocolError("missing required 'id'", { instance: message });
+        if (!message.hasOwnProperty("ratio"))
+            throw $util.ProtocolError("missing required 'ratio'", { instance: message });
         return message;
     };
 
@@ -942,12 +923,10 @@ $root.LeaderBoardItem = (function() {
     LeaderBoardItem.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (message.id != null && message.hasOwnProperty("id"))
-            if (!$util.isInteger(message.id))
-                return "id: integer expected";
-        if (message.ratio != null && message.hasOwnProperty("ratio"))
-            if (typeof message.ratio !== "number")
-                return "ratio: number expected";
+        if (!$util.isInteger(message.id))
+            return "id: integer expected";
+        if (typeof message.ratio !== "number")
+            return "ratio: number expected";
         return null;
     };
 
@@ -1014,11 +993,11 @@ $root.PayLoad = (function() {
      * Properties of a PayLoad.
      * @exports IPayLoad
      * @interface IPayLoad
-     * @property {Uint8Array|null} [mapString] PayLoad mapString
+     * @property {Uint8Array} mapString PayLoad mapString
      * @property {Array.<IPlayerInfoProto>|null} [players] PayLoad players
-     * @property {IMyPointProto|null} [leftTop] PayLoad leftTop
+     * @property {IMyPointProto} leftTop PayLoad leftTop
      * @property {Array.<ILeaderBoardItem>|null} [leaderBoard] PayLoad leaderBoard
-     * @property {number|null} [soundFx] PayLoad soundFx
+     * @property {number} soundFx PayLoad soundFx
      */
 
     /**
@@ -1056,7 +1035,7 @@ $root.PayLoad = (function() {
 
     /**
      * PayLoad leftTop.
-     * @member {IMyPointProto|null|undefined} leftTop
+     * @member {IMyPointProto} leftTop
      * @memberof PayLoad
      * @instance
      */
@@ -1102,18 +1081,15 @@ $root.PayLoad = (function() {
     PayLoad.encode = function encode(message, writer) {
         if (!writer)
             writer = $Writer.create();
-        if (message.mapString != null && message.hasOwnProperty("mapString"))
-            writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.mapString);
+        writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.mapString);
         if (message.players != null && message.players.length)
             for (var i = 0; i < message.players.length; ++i)
                 $root.PlayerInfoProto.encode(message.players[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-        if (message.leftTop != null && message.hasOwnProperty("leftTop"))
-            $root.MyPointProto.encode(message.leftTop, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+        $root.MyPointProto.encode(message.leftTop, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
         if (message.leaderBoard != null && message.leaderBoard.length)
             for (var i = 0; i < message.leaderBoard.length; ++i)
                 $root.LeaderBoardItem.encode(message.leaderBoard[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-        if (message.soundFx != null && message.hasOwnProperty("soundFx"))
-            writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.soundFx);
+        writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.soundFx);
         return writer;
     };
 
@@ -1172,6 +1148,12 @@ $root.PayLoad = (function() {
                 break;
             }
         }
+        if (!message.hasOwnProperty("mapString"))
+            throw $util.ProtocolError("missing required 'mapString'", { instance: message });
+        if (!message.hasOwnProperty("leftTop"))
+            throw $util.ProtocolError("missing required 'leftTop'", { instance: message });
+        if (!message.hasOwnProperty("soundFx"))
+            throw $util.ProtocolError("missing required 'soundFx'", { instance: message });
         return message;
     };
 
@@ -1202,9 +1184,8 @@ $root.PayLoad = (function() {
     PayLoad.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
-        if (message.mapString != null && message.hasOwnProperty("mapString"))
-            if (!(message.mapString && typeof message.mapString.length === "number" || $util.isString(message.mapString)))
-                return "mapString: buffer expected";
+        if (!(message.mapString && typeof message.mapString.length === "number" || $util.isString(message.mapString)))
+            return "mapString: buffer expected";
         if (message.players != null && message.hasOwnProperty("players")) {
             if (!Array.isArray(message.players))
                 return "players: array expected";
@@ -1214,7 +1195,7 @@ $root.PayLoad = (function() {
                     return "players." + error;
             }
         }
-        if (message.leftTop != null && message.hasOwnProperty("leftTop")) {
+        {
             var error = $root.MyPointProto.verify(message.leftTop);
             if (error)
                 return "leftTop." + error;
@@ -1228,9 +1209,8 @@ $root.PayLoad = (function() {
                     return "leaderBoard." + error;
             }
         }
-        if (message.soundFx != null && message.hasOwnProperty("soundFx"))
-            if (!$util.isInteger(message.soundFx))
-                return "soundFx: integer expected";
+        if (!$util.isInteger(message.soundFx))
+            return "soundFx: integer expected";
         return null;
     };
 

@@ -1,35 +1,34 @@
 syntax = 'proto3';
 
 message MyPointProto {
-  uint32 x = 1;
-  uint32 y = 2;
+  required uint32 x = 1;
+  required uint32 y = 2;
 }
 
 message PlayerInfoProto {
-  uint32 playerID = 1;
-  MyPointProto headPos = 2;
-  uint32 headDirection = 3;
-  uint32 nBlocks = 4;
-  uint32 nKill = 5;
-  uint32 state = 6;
-  repeated Track tracks = 7;
+  required uint32 playerID = 1;
+  required MyPointProto headPos = 2;
+  required uint32 headDirection = 3;
+  required uint32 nKill = 4;
+  required uint32 state = 5;
+  repeated Track tracks = 6;
 }
 
 message Track {
-  uint32 x = 1;
-  uint32 y = 2;
-  uint32 d = 3;
+  required uint32 x = 1;
+  required uint32 y = 2;
+  required uint32 d = 3;
 }
 
 message LeaderBoardItem {
-  uint32 id = 1;
-  float ratio = 2;
+  required uint32 id = 1;
+  required float ratio = 2;
 }
 
 message PayLoad {
-  bytes mapString = 1;
+  required bytes mapString = 1;
   repeated PlayerInfoProto players = 2;
-  MyPointProto leftTop = 3;
+  required MyPointProto leftTop = 3;
   repeated LeaderBoardItem leaderBoard = 4;
-  uint32 soundFx = 5;
+  required uint32 soundFx = 5;
 }

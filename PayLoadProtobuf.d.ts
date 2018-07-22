@@ -3,10 +3,10 @@ import * as $protobuf from "protobufjs";
 export interface IMyPointProto {
 
     /** MyPointProto x */
-    x?: (number|null);
+    x: number;
 
     /** MyPointProto y */
-    y?: (number|null);
+    y: number;
 }
 
 /** Represents a MyPointProto. */
@@ -99,22 +99,19 @@ export class MyPointProto implements IMyPointProto {
 export interface IPlayerInfoProto {
 
     /** PlayerInfoProto playerID */
-    playerID?: (number|null);
+    playerID: number;
 
     /** PlayerInfoProto headPos */
-    headPos?: (IMyPointProto|null);
+    headPos: IMyPointProto;
 
     /** PlayerInfoProto headDirection */
-    headDirection?: (number|null);
-
-    /** PlayerInfoProto nBlocks */
-    nBlocks?: (number|null);
+    headDirection: number;
 
     /** PlayerInfoProto nKill */
-    nKill?: (number|null);
+    nKill: number;
 
     /** PlayerInfoProto state */
-    state?: (number|null);
+    state: number;
 
     /** PlayerInfoProto tracks */
     tracks?: (ITrack[]|null);
@@ -133,13 +130,10 @@ export class PlayerInfoProto implements IPlayerInfoProto {
     public playerID: number;
 
     /** PlayerInfoProto headPos. */
-    public headPos?: (IMyPointProto|null);
+    public headPos: IMyPointProto;
 
     /** PlayerInfoProto headDirection. */
     public headDirection: number;
-
-    /** PlayerInfoProto nBlocks. */
-    public nBlocks: number;
 
     /** PlayerInfoProto nKill. */
     public nKill: number;
@@ -225,13 +219,13 @@ export class PlayerInfoProto implements IPlayerInfoProto {
 export interface ITrack {
 
     /** Track x */
-    x?: (number|null);
+    x: number;
 
     /** Track y */
-    y?: (number|null);
+    y: number;
 
     /** Track d */
-    d?: (number|null);
+    d: number;
 }
 
 /** Represents a Track. */
@@ -327,10 +321,10 @@ export class Track implements ITrack {
 export interface ILeaderBoardItem {
 
     /** LeaderBoardItem id */
-    id?: (number|null);
+    id: number;
 
     /** LeaderBoardItem ratio */
-    ratio?: (number|null);
+    ratio: number;
 }
 
 /** Represents a LeaderBoardItem. */
@@ -423,19 +417,19 @@ export class LeaderBoardItem implements ILeaderBoardItem {
 export interface IPayLoad {
 
     /** PayLoad mapString */
-    mapString?: (Uint8Array|null);
+    mapString: Uint8Array;
 
     /** PayLoad players */
     players?: (IPlayerInfoProto[]|null);
 
     /** PayLoad leftTop */
-    leftTop?: (IMyPointProto|null);
+    leftTop: IMyPointProto;
 
     /** PayLoad leaderBoard */
     leaderBoard?: (ILeaderBoardItem[]|null);
 
     /** PayLoad soundFx */
-    soundFx?: (number|null);
+    soundFx: number;
 }
 
 /** Represents a PayLoad. */
@@ -454,7 +448,7 @@ export class PayLoad implements IPayLoad {
     public players: IPlayerInfoProto[];
 
     /** PayLoad leftTop. */
-    public leftTop?: (IMyPointProto|null);
+    public leftTop: IMyPointProto;
 
     /** PayLoad leaderBoard. */
     public leaderBoard: ILeaderBoardItem[];

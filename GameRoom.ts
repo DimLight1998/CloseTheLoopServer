@@ -169,7 +169,6 @@ export class GameRoom {
                 aiInstance: null,
                 headPos: null, // do it later
                 headDirection: 0, // up
-                nBlocks: 0, // do it later
                 nKill: 0,
                 state: 2, // 0 活着，1正在爆炸，2死了
                 nextDirection: 0, // same as headDirection
@@ -388,7 +387,6 @@ export class GameRoom {
             info.headPos = this.randomSpawnNewPlayer(playerID);
             if (info.headPos !== null) {
                 info.state = 3;
-                info.nBlocks = 0;
                 info.nKill = 0;
                 info.aiInstance.init();
             }
@@ -413,10 +411,6 @@ export class GameRoom {
             this.leaderBoard.push([i, count[i]]);
         }
         this.leaderBoard.sort(([, score1], [, score2]) => score2 - score1);
-
-        for (let player of this.serverPlayerInfos) {
-            player.nBlocks = count[player.playerID];
-        }
     }
 
     async updateAIs(): Promise<void> {
@@ -584,7 +578,6 @@ export class GameRoom {
                 playerID: info.playerID,
                 headPos: info.headPos,
                 headDirection: info.headDirection,
-                nBlocks: info.nBlocks,
                 state: info.state,
                 tracks: info.tracks,
                 nKill: info.nKill
@@ -614,7 +607,6 @@ export class GameRoom {
             this.payload.players[i].headPos.x = this.serverPlayerInfos[i].headPos.x;
             this.payload.players[i].headPos.y = this.serverPlayerInfos[i].headPos.y;
             this.payload.players[i].headDirection = this.serverPlayerInfos[i].headDirection;
-            this.payload.players[i].nBlocks = this.serverPlayerInfos[i].nBlocks;
             this.payload.players[i].nKill = this.serverPlayerInfos[i].nKill;
             this.payload.players[i].state = this.serverPlayerInfos[i].state;
             this.payload.players[i].tracks = [];
