@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import { PayLoad } from './PayLoadProtobuf';
 
 export class RemoteClientSocket {
     webSocket: WebSocket = null;
