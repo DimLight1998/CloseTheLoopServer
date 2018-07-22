@@ -7,7 +7,7 @@ import * as https from 'https';
 import * as fs from 'fs';
 
 const keyPath: string = '/home/ubuntu/domain.key';
-const certPath: string = '/homt/ubuntu/chained.pem';
+const certPath: string = '/home/ubuntu/chained.pem';
 const options: any = {
     key: fs.readFileSync(keyPath),
     cert: fs.readFileSync(certPath)
