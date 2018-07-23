@@ -472,8 +472,8 @@ export class GameRoom {
         this.potentialFillList = [];
         this.initSounds();
         this.updateDyingPlayers();
-        this.updateHumanReborn();
         this.updatePlayerPos();
+        this.updateHumanReborn();
         this.updatePlayerReborn();
         this.updateTrackCutting();
         this.updatePlayerOverlapping();
