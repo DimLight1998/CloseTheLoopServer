@@ -32,6 +32,8 @@ export interface IClientAdapter {
     rebornPlayer(playerId: number): void;
 
     leaveRoom(playerId: number): void;
+
+    wxFireRoundStartEvent(): void;
 }
 
 // 一个房间需要一个server adapter

@@ -37,6 +37,8 @@ export class GameRoom {
     maxT: number;
     payload: PayLoad;
 
+    inWx: boolean = false;
+
     constructor(nRows: number, nCols: number, playerNum: number) {
         this.nRows = nRows;
         this.nCols = nCols;
@@ -100,7 +102,9 @@ export class GameRoom {
      */
     public startNewGame(): void {
         this.initAIPlayers();
-        this.timer = setTimeout(this.updateRound.bind(this), 0);// invoke the first time
+        if (!this.inWx) {
+            this.timer = setTimeout(this.updateRound.bind(this), 0);// invoke the first time
+        }
     }
 
     /**
@@ -493,7 +497,9 @@ export class GameRoom {
         } else {
             // console.log('actually compute costs ' + (currentTime - this.lastUpdateTime) + 'ms');
         }
-        this.timer = setTimeout(this.updateRound.bind(this), duration);
+        if (!this.inWx) {
+            this.timer = setTimeout(this.updateRound.bind(this), duration);
+        }
     }
 
     /**
@@ -618,7 +624,7 @@ export class GameRoom {
         }
     }
 
-    getListenerViewProtobuf(playerID2Track: number, viewNRows: number, viewNCols: number): Uint8Array {
+    getListenerViewProtobuf(playerID2Track: number, viewNRows: number, viewNCols: number): PayLoad {
 
         const info: ServerPlayerInfo = this.serverPlayerInfos[playerID2Track - 1];
         this.payload.leftTop.x = info.headPos.x - Math.floor(viewNRows / 2);
@@ -649,7 +655,7 @@ export class GameRoom {
         }
         this.payload.soundFx = this.soundFxs[playerID2Track];
 
-        return PayLoad.encode(this.payload).finish();
+        return this.payload;
     }
 
     /**
