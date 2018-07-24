@@ -176,7 +176,8 @@ export class GameRoom {
                 nKill: 0,
                 state: 2, // 0 活着，1正在爆炸，2死了
                 nextDirection: 0, // same as headDirection
-                tracks: []
+                tracks: [],
+                focusPoint: null
             };
             this.serverPlayerInfos.push(info);
 
@@ -390,6 +391,10 @@ export class GameRoom {
             const info: ServerPlayerInfo = this.serverPlayerInfos[playerID - 1];
             info.headPos = this.randomSpawnNewPlayer(playerID);
             if (info.headPos !== null) {
+                info.focusPoint = {
+                    x: info.headPos.x,
+                    y: info.headPos.y
+                };
                 info.state = 3;
                 info.nKill = 0;
                 info.aiInstance.init();
@@ -588,10 +593,18 @@ export class GameRoom {
                 tracks: info.tracks,
                 nKill: info.nKill
             });
+
+            // @bug this implementation is wrong when one player has multiple viewports, but now it is okay
+            if (Math.abs(info.focusPoint.x - info.headPos.x) > viewNRows / 4) {
+                info.focusPoint.x = info.headPos.x;
+            }
+            if (Math.abs(info.focusPoint.y - info.headPos.y) > viewNCols / 4) {
+                info.focusPoint.y = info.headPos.y;
+            }
             if (info.playerID === playerID2Track) {
                 leftTop = {
-                    x: info.headPos.x - Math.floor(viewNRows / 2),
-                    y: info.headPos.y - Math.floor(viewNCols / 2)
+                    x: info.focusPoint.x - Math.floor(viewNRows / 2),
+                    y: info.focusPoint.y - Math.floor(viewNCols / 2)
                 };
                 GameRoom.rangeAll(leftTop.x, leftTop.x + viewNRows - 1,
                     leftTop.y, leftTop.y + viewNCols - 1, func);
@@ -627,8 +640,16 @@ export class GameRoom {
     getListenerViewProtobuf(playerID2Track: number, viewNRows: number, viewNCols: number): PayLoad {
 
         const info: ServerPlayerInfo = this.serverPlayerInfos[playerID2Track - 1];
-        this.payload.leftTop.x = info.headPos.x - Math.floor(viewNRows / 2);
-        this.payload.leftTop.y = info.headPos.y - Math.floor(viewNCols / 2);
+
+        // @bug this implementation is wrong when one player has multiple viewports, but now it is okay
+        if (Math.abs(info.focusPoint.x - info.headPos.x) > viewNRows / 4) {
+            info.focusPoint.x = info.headPos.x;
+        }
+        if (Math.abs(info.focusPoint.y - info.headPos.y) > viewNCols / 4) {
+            info.focusPoint.y = info.headPos.y;
+        }
+        this.payload.leftTop.x = info.focusPoint.x - Math.floor(viewNRows / 2);
+        this.payload.leftTop.y = info.focusPoint.y - Math.floor(viewNCols / 2);
 
         const [x1, x2, y1, y2]: [number, number, number, number]
             = [this.payload.leftTop.x, this.payload.leftTop.x + viewNRows - 1,
