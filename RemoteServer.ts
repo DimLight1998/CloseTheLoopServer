@@ -38,7 +38,12 @@ export class RemoteServer implements IServerAdapter {
             const payload: PayLoad = this.room.getListenerViewProtobuf(
                 listener.remotePlayerID, listener.viewNRows, listener.viewNCols);
             const result: Uint8Array = PayLoad.encode(payload).finish();
-            listener.clientSocket.pushWorld(result);
+
+            try {
+                listener.clientSocket.pushWorld(result);
+            } catch (e) {
+                // do nothing
+            }
         }
     }
 
