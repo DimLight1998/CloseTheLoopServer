@@ -22,7 +22,7 @@ message Track {
 
 message LeaderBoardItem {
   required uint32 id = 1;
-  required float ratio = 2;
+  required uint32 ratio = 2;
 }
 
 message PayLoad {

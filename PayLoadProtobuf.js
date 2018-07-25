@@ -110,15 +110,15 @@ $root.MyPointProto = (function() {
         while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
-                    message.x = reader.sint32();
-                    break;
-                case 2:
-                    message.y = reader.sint32();
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
+            case 1:
+                message.x = reader.sint32();
+                break;
+            case 2:
+                message.y = reader.sint32();
+                break;
+            default:
+                reader.skipType(tag & 7);
+                break;
             }
         }
         if (!message.hasOwnProperty("x"))
@@ -363,29 +363,29 @@ $root.PlayerInfoProto = (function() {
         while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
-                    message.playerID = reader.uint32();
-                    break;
-                case 2:
-                    message.headPos = $root.MyPointProto.decode(reader, reader.uint32());
-                    break;
-                case 3:
-                    message.headDirection = reader.uint32();
-                    break;
-                case 4:
-                    message.nKill = reader.uint32();
-                    break;
-                case 5:
-                    message.state = reader.uint32();
-                    break;
-                case 6:
-                    if (!(message.tracks && message.tracks.length))
-                        message.tracks = [];
-                    message.tracks.push($root.Track.decode(reader, reader.uint32()));
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
+            case 1:
+                message.playerID = reader.uint32();
+                break;
+            case 2:
+                message.headPos = $root.MyPointProto.decode(reader, reader.uint32());
+                break;
+            case 3:
+                message.headDirection = reader.uint32();
+                break;
+            case 4:
+                message.nKill = reader.uint32();
+                break;
+            case 5:
+                message.state = reader.uint32();
+                break;
+            case 6:
+                if (!(message.tracks && message.tracks.length))
+                    message.tracks = [];
+                message.tracks.push($root.Track.decode(reader, reader.uint32()));
+                break;
+            default:
+                reader.skipType(tag & 7);
+                break;
             }
         }
         if (!message.hasOwnProperty("playerID"))
@@ -656,18 +656,18 @@ $root.Track = (function() {
         while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
-                    message.x = reader.uint32();
-                    break;
-                case 2:
-                    message.y = reader.uint32();
-                    break;
-                case 3:
-                    message.d = reader.uint32();
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
+            case 1:
+                message.x = reader.uint32();
+                break;
+            case 2:
+                message.y = reader.uint32();
+                break;
+            case 3:
+                message.d = reader.uint32();
+                break;
+            default:
+                reader.skipType(tag & 7);
+                break;
             }
         }
         if (!message.hasOwnProperty("x"))
@@ -843,7 +843,7 @@ $root.LeaderBoardItem = (function() {
         if (!writer)
             writer = $Writer.create();
         writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.id);
-        writer.uint32(/* id 2, wireType 5 =*/21).float(message.ratio);
+        writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.ratio);
         return writer;
     };
 
@@ -878,15 +878,15 @@ $root.LeaderBoardItem = (function() {
         while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
-                    message.id = reader.uint32();
-                    break;
-                case 2:
-                    message.ratio = reader.float();
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
+            case 1:
+                message.id = reader.uint32();
+                break;
+            case 2:
+                message.ratio = reader.uint32();
+                break;
+            default:
+                reader.skipType(tag & 7);
+                break;
             }
         }
         if (!message.hasOwnProperty("id"))
@@ -925,8 +925,8 @@ $root.LeaderBoardItem = (function() {
             return "object expected";
         if (!$util.isInteger(message.id))
             return "id: integer expected";
-        if (typeof message.ratio !== "number")
-            return "ratio: number expected";
+        if (!$util.isInteger(message.ratio))
+            return "ratio: integer expected";
         return null;
     };
 
@@ -945,7 +945,7 @@ $root.LeaderBoardItem = (function() {
         if (object.id != null)
             message.id = object.id >>> 0;
         if (object.ratio != null)
-            message.ratio = Number(object.ratio);
+            message.ratio = object.ratio >>> 0;
         return message;
     };
 
@@ -969,7 +969,7 @@ $root.LeaderBoardItem = (function() {
         if (message.id != null && message.hasOwnProperty("id"))
             object.id = message.id;
         if (message.ratio != null && message.hasOwnProperty("ratio"))
-            object.ratio = options.json && !isFinite(message.ratio) ? String(message.ratio) : message.ratio;
+            object.ratio = message.ratio;
         return object;
     };
 
@@ -1124,28 +1124,28 @@ $root.PayLoad = (function() {
         while (reader.pos < end) {
             var tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
-                    message.mapString = reader.bytes();
-                    break;
-                case 2:
-                    if (!(message.players && message.players.length))
-                        message.players = [];
-                    message.players.push($root.PlayerInfoProto.decode(reader, reader.uint32()));
-                    break;
-                case 3:
-                    message.leftTop = $root.MyPointProto.decode(reader, reader.uint32());
-                    break;
-                case 4:
-                    if (!(message.leaderBoard && message.leaderBoard.length))
-                        message.leaderBoard = [];
-                    message.leaderBoard.push($root.LeaderBoardItem.decode(reader, reader.uint32()));
-                    break;
-                case 5:
-                    message.soundFx = reader.uint32();
-                    break;
-                default:
-                    reader.skipType(tag & 7);
-                    break;
+            case 1:
+                message.mapString = reader.bytes();
+                break;
+            case 2:
+                if (!(message.players && message.players.length))
+                    message.players = [];
+                message.players.push($root.PlayerInfoProto.decode(reader, reader.uint32()));
+                break;
+            case 3:
+                message.leftTop = $root.MyPointProto.decode(reader, reader.uint32());
+                break;
+            case 4:
+                if (!(message.leaderBoard && message.leaderBoard.length))
+                    message.leaderBoard = [];
+                message.leaderBoard.push($root.LeaderBoardItem.decode(reader, reader.uint32()));
+                break;
+            case 5:
+                message.soundFx = reader.uint32();
+                break;
+            default:
+                reader.skipType(tag & 7);
+                break;
             }
         }
         if (!message.hasOwnProperty("mapString"))

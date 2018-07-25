@@ -633,7 +633,7 @@ export class GameRoom {
                 this.payload.players[i].tracks.push(new Track({ x: x, y: y, d: d }));
             }
             this.payload.leaderBoard[i].id = this.leaderBoard[i][0];
-            this.payload.leaderBoard[i].ratio = this.leaderBoard[i][1];
+            this.payload.leaderBoard[i].ratio = Math.floor(this.leaderBoard[i][1] * 10000);
         }
     }
 
