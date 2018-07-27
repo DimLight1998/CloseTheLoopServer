@@ -3,6 +3,7 @@
 import { GameRoom } from './GameRoom';
 import { ServerPlayerInfo } from './ServerPlayerInfo';
 import { MyPoint } from './PlayerInfo';
+import { Uint16TripleQueue } from './Uint16TripleQueue';
 
 enum State {
     Idle, Attack, Flee, Work
@@ -13,6 +14,8 @@ export class GameAI {
     static prevDir: number[][][] = null;
     static dist: number[][][] = null;
     static max_t: number = 0;
+    static tripleQueue: Uint16TripleQueue = new Uint16TripleQueue(20 * 20 * 4);
+
     // 供ai操作的游戏对象
     game: GameRoom;
     playerID: number;
@@ -273,9 +276,9 @@ export class GameAI {
         let [sR, sC, sD] = [this.playerInfo.headPos.x, this.playerInfo.headPos.y,
         this.playerInfo.headDirection];
         GameAI.max_t++;
-        const queue: [number, number, number][] = [];
+        GameAI.tripleQueue.clear();
 
-        queue.push([sR, sC, sD]);
+        GameAI.tripleQueue.push(sR, sC, sD);
         GameAI.prevDir[sR][sC][sD] = -1;
         GameAI.vis[sR][sC][sD] = GameAI.max_t;
         GameAI.dist[sR][sC][sD] = 0;
@@ -288,8 +291,8 @@ export class GameAI {
 
         this.trackCoords = [];
 
-        while (queue.length > 0) {
-            let [r, c, d] = queue.shift();
+        while (!GameAI.tripleQueue.empty()) {
+            let [r, c, d] = GameAI.tripleQueue.shift();
             if (this.homeLandPos === null && this.game.colorMap[r][c] === this.playerID) {
                 this.homeLandPos = [r, c, d];
                 this.homeLandDist = GameAI.dist[r][c][d];
@@ -318,7 +321,7 @@ export class GameAI {
                                 GameAI.vis[nr][nc][curD] = GameAI.max_t;
                                 GameAI.dist[nr][nc][curD] = GameAI.dist[r][c][d] + 1;
                                 GameAI.prevDir[nr][nc][curD] = d;
-                                queue.push([nr, nc, curD]);
+                                GameAI.tripleQueue.push(nr, nc, curD);
                             }
                         }
                     }

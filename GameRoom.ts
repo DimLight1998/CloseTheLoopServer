@@ -5,6 +5,7 @@ import { GameAI } from './GameAI';
 import { MyPoint, PayLoadJson, PlayerInfo } from './PlayerInfo';
 import { IServerAdapter } from './IAdapter';
 import { PayLoad, MyPointProto, PlayerInfoProto, Track, LeaderBoardItem, IPlayerInfoProto } from './PayLoadProtobuf';
+import { Uint16PairQueue } from './Uint16PairQueue';
 
 export class GameRoom {
     static directions: MyPoint[] = [
@@ -39,6 +40,9 @@ export class GameRoom {
 
     inWx: boolean = false;
 
+    pairQueue: Uint16PairQueue = null;
+    storageQueue: Uint16PairQueue = null;
+
     constructor(nRows: number, nCols: number, playerNum: number) {
         this.nRows = nRows;
         this.nCols = nCols;
@@ -64,6 +68,9 @@ export class GameRoom {
             this.payload.leaderBoard.push(new LeaderBoardItem());
         }
         this.payload.leftTop = new MyPointProto();
+
+        this.pairQueue = new Uint16PairQueue(nRows * nCols);
+        this.storageQueue = new Uint16PairQueue(nRows * nCols);
     }
 
     static create2DArray(nRows: number, nCols: number): number[][] {
@@ -299,15 +306,16 @@ export class GameRoom {
     floodFill(r: number, c: number, playerId: number): boolean {
         // start flood fill
         let adjToWall: boolean = false;
-        let queue: [number, number][] = [];
-        let storage: [number, number][] = [];
 
-        queue.push([r, c]);
-        storage.push([r, c]);
+        this.pairQueue.clear();
+        this.storageQueue.clear();
+
+        this.pairQueue.push(r, c);
+        this.storageQueue.push(r, c);
         this.mapStatus[r][c] = this.maxT;
 
-        while (queue.length > 0) {
-            let [x, y]: [number, number] = queue.pop();// convert queue to stack, performance enhance
+        while (!this.pairQueue.empty()) {
+            let [x, y]: [number, number] = this.pairQueue.shift();
 
             for (let dir of GameRoom.directions) {
                 let [nx, ny]: [number, number] = [x + dir.x, y + dir.y];
@@ -318,8 +326,8 @@ export class GameRoom {
                         && this.trackMap[nx][ny] !== playerId
                         && this.mapStatus[nx][ny] !== this.maxT) {
                         this.mapStatus[nx][ny] = this.maxT;
-                        queue.push([nx, ny]);
-                        storage.push([nx, ny]);
+                        this.pairQueue.push(nx, ny);
+                        this.storageQueue.push(nx, ny);
                     }
                 }
             }
@@ -329,8 +337,8 @@ export class GameRoom {
             // console.log(storage);
 
             // this block is not adjacent to a wall, so it should be colored
-            for (const [x, y] of storage) {
-                this.colorMap[x][y] = playerId;
+            for (let i: number = this.storageQueue.head; i < this.storageQueue.tail; i++) {
+                this.colorMap[this.storageQueue.queueA[i]][this.storageQueue.queueB[i]] = playerId;
             }
             return true;
         }
