@@ -15,6 +15,9 @@ export class GameAI {
     static dist: number[][][] = null;
     static max_t: number = 0;
     static tripleQueue: Uint16TripleQueue = new Uint16TripleQueue(20 * 20 * 4);
+    static maxDistance: number = 0;
+    static finalMaxDistance: number = 7;
+    static distanceStep: number = 0.2;
 
     // 供ai操作的游戏对象
     game: GameRoom;
@@ -30,7 +33,6 @@ export class GameAI {
     planRate: number = 0.35;
     emptyLandProceedRate: number = 0.9;
     enemyLandProceedRate: number = 0.7;
-    maxDistance: number = 10;
     dangerThreshold: number = 0.5;
     fleeRate: number = 0.3;
     attackRate: number = 0.5;
@@ -75,7 +77,7 @@ export class GameAI {
     }
 
     updateAI(): void {
-        this.bfs(this.maxDistance);
+        this.bfs(GameAI.maxDistance);
         if (this.playerInfo.isAI) {
             this.updateState();
         }
